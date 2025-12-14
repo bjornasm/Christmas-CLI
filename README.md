@@ -6,17 +6,6 @@ Animate a festive ASCII art Christmas tree in your terminal with blinking holida
 
 
 
-
-📂 GET THE CODE:
-https://github.com/artcore-c/Christmas-CLI
-
-To run the script:
-1. Copy the code from 
-2. Save as Christmas.py
-3. Run: python3 Christmas.py
-4. Press Ctrl+C to stop
-
-
 ## 🚀 Quick Start
 ```bash
 # Clone the repository
@@ -41,12 +30,9 @@ python3 Christmas_tree.py
 ## Want a custom terminal like ours?
 
 Try these:
-
-https://hyper.is
-
-https://iterm2.com
-
-https://www.warp.dev
+- [Hyper](https://hyper.is)
+- [iTerm2](https://iterm2.com)
+- [Warp](https://www.warp.dev)
 
 
 ## 🎁 Contributing
