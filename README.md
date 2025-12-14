@@ -1,6 +1,6 @@
 # 🎄 Python Christmas Tree Terminal Animation - ASCII Art
 
-Animate a festive ASCII art Christmas tree in your terminal with blinking holiday ornaments!
+Animate a festive ASCII art Christmas tree in your terminal with blinking holiday ornaments and pulsing star!
 
 [![Christmas in the Command Line | ASCII Tree Animation in Python](https://img.youtube.com/vi/Ji9c0Lj4kOw/maxresdefault.jpg)](https://youtu.be/Ji9c0Lj4kOw)
 
