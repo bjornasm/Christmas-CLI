@@ -18,7 +18,7 @@ python3 Christmas_tree.py
 # Press Ctrl+C to stop
 ```
 
-## 🎨 Features
+## Features
 
 - Pure Python (no dependencies)
 - ANSI color support
