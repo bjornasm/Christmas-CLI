@@ -185,11 +185,7 @@ def main():
         kwargs["fps"] = int(args["fps"])
 
     clear_screen()
-    print("Starting Christmas Tree Animation...")
-    print("Press Ctrl+C to stop\n")
-    time.sleep(2)
 
-    # Run animation for 30 seconds at 4 FPS
     animate_tree(**kwargs)
 
 
