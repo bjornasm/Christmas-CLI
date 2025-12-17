@@ -107,9 +107,7 @@ def draw_tree(blink_state, star_bright):
         for i in range(width):
             if i in ornament_positions:
                 # Ornament - blink effect
-                if (
-                    blink_state and random.random() > 0.3
-                ):  # 70% chance to light up when blinking
+                if random.random() > 0.3:  # 70% chance to light up when blinking
                     color = random.choice(ornament_colors)
                     row.append(color + "●" + Colors.RESET)
                 else:
