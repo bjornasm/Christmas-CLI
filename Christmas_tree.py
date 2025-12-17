@@ -45,6 +45,13 @@ def clear_screen():
     os.system("clear" if os.name == "posix" else "cls")
 
 
+def draw_background(snow: bool, terminal_width: int, max_width: int, probability=0.02):
+    length = max(0, (terminal_width - max_width) // 2)
+    return "".join(
+        "*" if (random.random() < probability) and snow else " " for _ in range(length)
+    )
+
+
 def draw_tree(blink_state, star_bright):
     """Draw the Christmas tree with ornaments and star"""
 
@@ -77,13 +84,11 @@ def draw_tree(blink_state, star_bright):
     max_width = max(row[0] for row in tree_rows)
 
     # Extra padding to center the entire tree in the terminal
-    left_margin = " " * max(0, (terminal_width - max_width) // 2)
-
-    # Star
     star_color = Colors.YELLOW + Colors.BOLD if star_bright else Colors.YELLOW
     star = star_color + "★" + Colors.RESET
     padding = " " * ((max_width - 1) // 2)
-    output.append(left_margin + padding + star)
+    background = draw_background(True, terminal_width, max_width)
+    output.append(background + padding + star + background)
 
     # Ornament colors to cycle through
     ornament_colors = [
@@ -113,25 +118,29 @@ def draw_tree(blink_state, star_bright):
                 # Regular tree foliage
                 row.append(Colors.GREEN + "*" + Colors.RESET)
 
-        output.append(left_margin + padding + "".join(row))
+        background = draw_background(True, terminal_width, max_width)
+
+        output.append(background + padding + "".join(row) + background)
 
     # Trunk
     trunk_padding = " " * ((max_width - trunk_width) // 2)
     for _ in range(trunk_rows):
         output.append(
-            left_margin
+            background
             + trunk_padding
             + Colors.YELLOW
             + "█" * trunk_width
             + Colors.RESET
+            + background
         )
 
     # Add festive message
     output.append("")
     message = "Merry Christmas!"
     msg_padding = " " * ((max_width - len(message)) // 2)
+    background = draw_background(False, terminal_width, max_width)
     output.append(
-        left_margin + msg_padding + Colors.BOLD + Colors.RED + message + Colors.RESET
+        background + msg_padding + Colors.BOLD + Colors.RED + message + Colors.RESET
     )
 
     return "\n".join(output)
