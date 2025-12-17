@@ -22,6 +22,14 @@ class Colors:
     WHITE = "\033[97m"
     BOLD = "\033[1m"
     RESET = "\033[0m"
+    ORANGE = "\033[38;5;208m"
+    PINK = "\033[38;5;205m"
+    PURPLE = "\033[38;5;135m"
+    GOLD = "\033[38;5;220m"
+    LIME = "\033[38;5;154m"
+    TEAL = "\033[38;5;51m"
+    VIOLET = "\033[38;5;99m"
+    BROWN = "\033[38;5;94m"
 
 
 def setup_parser():
@@ -43,7 +51,7 @@ def setup_parser():
 def clear_screen():
     """Clear the terminal screen"""
     os.system("clear" if os.name == "posix" else "cls")
-    print("\033[?25l", end="")  # Move cursor to home (0,0)
+    print("\033[?25l", end="")
 
 
 def draw_background(
@@ -91,16 +99,19 @@ def create_tree(height):
     return tree
 
 
-def draw_tree(tree, blink_state, star_bright):
-    """Draw the Christmas tree with ornaments and star"""
-
-    # Get terminal width for centering
+def get_terminal_dimensions():
     try:
         terminal_width = shutil.get_terminal_size().columns
         terminal_height = shutil.get_terminal_size().lines
     except:
         terminal_width = 80  # Default if can't detect
         terminal_height = 80
+
+    return (terminal_width, terminal_height)
+
+
+def draw_tree(tree, star_bright):
+    """Draw the Christmas tree with ornaments and star"""
 
     # Tree structure - each row has width and ornament positions
 
@@ -125,6 +136,13 @@ def draw_tree(tree, blink_state, star_bright):
         Colors.MAGENTA,
         Colors.CYAN,
         Colors.YELLOW,
+        Colors.ORANGE,
+        Colors.PINK,
+        Colors.PURPLE,
+        Colors.GOLD,
+        Colors.LIME,
+        Colors.TEAL,
+        Colors.VIOLET,
     ]
 
     # Draw tree body
@@ -149,9 +167,9 @@ def draw_tree(tree, blink_state, star_bright):
     # Trunk
     trunk_padding = " " * ((max_width - trunk_width) // 2)
     for _ in range(trunk_rows):
-        output.append(trunk_padding + Colors.YELLOW + "█" * trunk_width + Colors.RESET)
+        output.append(trunk_padding + Colors.BROWN + "█" * trunk_width + Colors.RESET)
 
-    return (output, max_width, terminal_width, terminal_height)
+    return (output, max_width)
 
 
 def animate_tree(tree, duration=30, fps=4):
@@ -164,36 +182,50 @@ def animate_tree(tree, duration=30, fps=4):
     """
     frame_delay = 1.0 / fps
     frames = int(duration * fps)
+    light_freq = 5
 
     try:
         for frame in range(frames):
             clear_screen()
-
-            # Blink state changes every few frames
-            blink_state = (frame // 5) % 2 == 0  # Toggle every 2 frames
-
-            # Star pulse effect (slower than ornaments)
-            star_bright = (frame // 4) % 2 == 0  # Toggle every 4 frames
+            terminal_width, terminal_height = get_terminal_dimensions()
+            blink_state = frame % 3 == 0
+            star_bright = (frame // light_freq * 2) % 2 == 0
 
             if blink_state or frame == 0:
-                tree_drawing, max_width, terminal_width, terminal_height = draw_tree(
-                    tree, blink_state, star_bright
-                )
+                (
+                    tree_drawing,
+                    max_width,
+                ) = draw_tree(tree, star_bright)
 
-            # Add background and padding to each line
-            drawing = []
+            horison = []
             horison_size = int(0.8 * (terminal_height - (len(tree_drawing))))
             for i in range(0, horison_size):
-                drawing.append(
+                horison.append(
                     draw_background(True, terminal_width, 0)
                     + draw_background(True, terminal_width, 0)
                 )
+            if frame == 0:
+                # Generate stars
+                stars = []
+                num_stars = random.randint(1, 100)
+                for _ in range(num_stars):
+                    line_index = random.randint(0, min(10, horison_size))
+                    char_index = random.randint(0, terminal_width)
+                    stars.append([line_index, char_index])
+
+            for line_index, char_index in stars:
+                horison[line_index] = (
+                    horison[line_index][:char_index]
+                    + Colors.YELLOW
+                    + "*"
+                    + Colors.RESET
+                    + horison[line_index][char_index + 1 :]
+                )
+            drawing = []
             for i, line in enumerate(tree_drawing):
-                # Determine if this line should have snow
                 background = draw_background(True, terminal_width, max_width)
                 drawing.append(background + line + background)
 
-            # Add festive message with centering and background
             message_text = "Merry Christmas!"
             message_padding = " " * ((max_width - len(message_text)) // 2)
             background = draw_background(False, terminal_width, max_width)
@@ -207,9 +239,8 @@ def animate_tree(tree, duration=30, fps=4):
                 + background
             ]
 
-            print("\n".join(drawing + message))
+            print("\n".join(horison + drawing + message))
 
-            # Show frame counter (optional - remove for final video)
             print(f"\nFrame: {frame + 1}/{frames} | Press Ctrl+C to stop")
 
             time.sleep(frame_delay)
