@@ -7,7 +7,7 @@ Features: Blinking ornaments, pulsing star, colored decorations
 import time
 import random
 import os
-import shutil  # For getting terminal size
+import shutil
 import argparse
 
 
@@ -54,22 +54,15 @@ def clear_screen():
     print("\033[?25l", end="")
 
 
-def draw_background(
-    snow: bool, terminal_width: int, max_width: int, snow_probability=0.05
-):
-    length = max(0, (terminal_width - max_width) // 2)
-    snow_symbols = ["*", "+", ".", "o", "•"]  # different snow symbols
-    symbol_weights = [5, 2, 3, 1, 1]
-    return (
-        " "
-        + "".join(
-            random.choices(snow_symbols, weights=symbol_weights)[0]
-            if (random.random() < snow_probability and snow)
-            else " "
-            for _ in range(length - 2)
-        )
-        + " "
-    )
+def get_terminal_dimensions():
+    try:
+        terminal_width = shutil.get_terminal_size().columns
+        terminal_height = shutil.get_terminal_size().lines
+    except:
+        terminal_width = 80  # Default if can't detect
+        terminal_height = 80
+
+    return (terminal_width, terminal_height)
 
 
 def create_tree(height):
@@ -99,37 +92,18 @@ def create_tree(height):
     return tree
 
 
-def get_terminal_dimensions():
-    try:
-        terminal_width = shutil.get_terminal_size().columns
-        terminal_height = shutil.get_terminal_size().lines
-    except:
-        terminal_width = 80  # Default if can't detect
-        terminal_height = 80
-
-    return (terminal_width, terminal_height)
-
-
 def draw_tree(tree, star_bright):
-    """Draw the Christmas tree with ornaments and star"""
-
-    # Tree structure - each row has width and ornament positions
-
     trunk_rows = 2
     trunk_width = 1
 
-    output = []
+    tree_drawing = []
 
-    # Calculate tree width for centering
     max_width = max(row[0] for row in tree)
 
-    # Extra padding to center the entire tree in the terminal
     star_color = Colors.YELLOW + Colors.BOLD if star_bright else Colors.YELLOW
     star = star_color + "★" + Colors.RESET
-    padding = " " * ((max_width - 1) // 2)
-    output.append(padding + star)
+    tree_drawing.append(star)
 
-    # Ornament colors to cycle through
     ornament_colors = [
         Colors.RED,
         Colors.BLUE,
@@ -145,41 +119,45 @@ def draw_tree(tree, star_bright):
         Colors.VIOLET,
     ]
 
-    # Draw tree body
     for row_num, (width, ornament_positions) in enumerate(tree[1:], 1):
-        padding = " " * ((max_width - width) // 2)
         row = []
-
         for i in range(width):
             if i in ornament_positions:
-                # Ornament - blink effect
                 if random.random() > 0.3:  # 70% chance to light up when blinking
                     color = random.choice(ornament_colors)
                     row.append(color + "●" + Colors.RESET)
                 else:
                     row.append(Colors.GREEN + "●" + Colors.RESET)
             else:
-                # Regular tree foliage
                 row.append(Colors.GREEN + "*" + Colors.RESET)
 
-        output.append(padding + "".join(row))
+        tree_drawing.append("".join(row))
 
-    # Trunk
-    trunk_padding = " " * ((max_width - trunk_width) // 2)
     for _ in range(trunk_rows):
-        output.append(trunk_padding + Colors.BROWN + "█" * trunk_width + Colors.RESET)
+        tree_drawing.append(Colors.BROWN + "█" * trunk_width + Colors.RESET)
 
-    return (output, max_width)
+    return (tree_drawing, max_width, trunk_rows)
+
+
+def draw_background(
+    snow: bool, terminal_width: int, max_width: int, snow_probability=0.05
+):
+    length = max(0, (terminal_width - max_width) // 2)
+    snow_symbols = ["*", "+", ".", "o", "•"]  # different snow symbols
+    symbol_weights = [10, 4, 6, 1, 4]
+    return (
+        " "
+        + "".join(
+            random.choices(snow_symbols, weights=symbol_weights)[0]
+            if (random.random() < snow_probability and snow)
+            else " "
+            for _ in range(length - 2)
+        )
+        + " "
+    )
 
 
 def animate_tree(tree, duration=30, fps=4):
-    """
-    Animate the Christmas tree with padding and background
-
-    Args:
-        duration: How long to run animation (seconds)
-        fps: Frames per second (higher = smoother but more CPU)
-    """
     frame_delay = 1.0 / fps
     frames = int(duration * fps)
     light_freq = 5
@@ -195,17 +173,18 @@ def animate_tree(tree, duration=30, fps=4):
                 (
                     tree_drawing,
                     max_width,
+                    trunk_rows,
                 ) = draw_tree(tree, star_bright)
 
             horison = []
-            horison_size = int(0.8 * (terminal_height - (len(tree_drawing))))
+            horison_size = terminal_height - (len(tree_drawing)) - 4
             for i in range(0, horison_size):
                 horison.append(
                     draw_background(True, terminal_width, 0)
                     + draw_background(True, terminal_width, 0)
                 )
+
             if frame == 0:
-                # Generate stars
                 stars = []
                 num_stars = random.randint(1, 100)
                 for _ in range(num_stars):
@@ -213,7 +192,8 @@ def animate_tree(tree, duration=30, fps=4):
                     char_index = random.randint(0, terminal_width)
                     stars.append([line_index, char_index])
 
-            for line_index, char_index in stars:
+            # Show stars gradually (one new star every 3 frames), then all of them
+            for line_index, char_index in stars[: min(frame // 3, num_stars)]:
                 horison[line_index] = (
                     horison[line_index][:char_index]
                     + Colors.YELLOW
@@ -221,9 +201,21 @@ def animate_tree(tree, duration=30, fps=4):
                     + Colors.RESET
                     + horison[line_index][char_index + 1 :]
                 )
+            # Adding background to the tree_drawing
             drawing = []
             for i, line in enumerate(tree_drawing):
-                background = draw_background(True, terminal_width, max_width)
+                if i == 0:
+                    # Star line (width = 1)
+                    line_width = 1
+                elif i >= len(tree_drawing) - trunk_rows:
+                    # Trunk lines
+                    line_width = 1
+                else:
+                    # Tree body lines
+                    tree_row_index = i - 1  # -1 because star is at index 0
+                    line_width = tree[tree_row_index + 1][0]
+
+                background = draw_background(True, terminal_width, line_width)
                 drawing.append(background + line + background)
 
             message_text = "Merry Christmas!"
@@ -264,7 +256,6 @@ def main():
         kwargs["fps"] = int(args["fps"])
 
     kwargs["tree"] = create_tree(17)
-    clear_screen()
 
     animate_tree(**kwargs)
 
