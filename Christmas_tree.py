@@ -47,12 +47,42 @@ def clear_screen():
 
 def draw_background(snow: bool, terminal_width: int, max_width: int, probability=0.02):
     length = max(0, (terminal_width - max_width) // 2)
-    return "".join(
-        "*" if (random.random() < probability) and snow else " " for _ in range(length)
+    return (
+        " "
+        + "".join(
+            "*" if (random.random() < probability) and snow else " "
+            for _ in range(length - 2)
+        )
+        + " "
     )
 
 
-def draw_tree(blink_state, star_bright):
+def create_tree():
+    tree_structure = [
+        # (width, number of ornaments)
+        (1, 0),  # Star row
+        (3, 1),  # Top tier
+        (5, 2),
+        (7, 2),  # Middle tier
+        (9, 3),
+        (11, 3),
+        (13, 3),  # Bottom tier
+        (15, 3),
+        (17, 3),
+    ]
+
+    tree_rows = []
+    for width, num_ornaments in tree_structure:
+        if num_ornaments > 0:
+            # Randomly pick positions without duplicates
+            ornament_positions = sorted(random.sample(range(width), num_ornaments))
+        else:
+            ornament_positions = []
+        tree_rows.append((width, ornament_positions))
+    return tree_rows
+
+
+def draw_tree(tree, blink_state, star_bright):
     """Draw the Christmas tree with ornaments and star"""
 
     # Get terminal width for centering
@@ -62,18 +92,6 @@ def draw_tree(blink_state, star_bright):
         terminal_width = 80  # Default if can't detect
 
     # Tree structure - each row has width and ornament positions
-    tree_rows = [
-        # (width, [ornament positions])
-        (1, []),  # Star
-        (3, [1]),  # Top tier
-        (5, [1, 3]),
-        (7, [2, 5]),  # Middle tier
-        (9, [1, 4, 7]),
-        (11, [2, 5, 8]),
-        (13, [1, 6, 11]),  # Bottom tier
-        (15, [3, 7, 12]),
-        (17, [2, 8, 14]),
-    ]
 
     trunk_rows = 2
     trunk_width = 1
@@ -81,7 +99,7 @@ def draw_tree(blink_state, star_bright):
     output = []
 
     # Calculate tree width for centering
-    max_width = max(row[0] for row in tree_rows)
+    max_width = max(row[0] for row in tree)
 
     # Extra padding to center the entire tree in the terminal
     star_color = Colors.YELLOW + Colors.BOLD if star_bright else Colors.YELLOW
@@ -100,7 +118,7 @@ def draw_tree(blink_state, star_bright):
     ]
 
     # Draw tree body
-    for row_num, (width, ornament_positions) in enumerate(tree_rows[1:], 1):
+    for row_num, (width, ornament_positions) in enumerate(tree[1:], 1):
         padding = " " * ((max_width - width) // 2)
         row = []
 
@@ -117,12 +135,12 @@ def draw_tree(blink_state, star_bright):
                 row.append(Colors.GREEN + "*" + Colors.RESET)
 
         background = draw_background(True, terminal_width, max_width)
-
         output.append(background + padding + "".join(row) + background)
 
     # Trunk
     trunk_padding = " " * ((max_width - trunk_width) // 2)
     for _ in range(trunk_rows):
+        background = draw_background(True, terminal_width, max_width)
         output.append(
             background
             + trunk_padding
@@ -144,7 +162,7 @@ def draw_tree(blink_state, star_bright):
     return "\n".join(output)
 
 
-def animate_tree(duration=30, fps=4):
+def animate_tree(tree, duration=30, fps=4):
     """
     Animate the Christmas tree
 
@@ -165,8 +183,8 @@ def animate_tree(duration=30, fps=4):
             # Star pulse effect (slower than ornaments)
             star_bright = (frame // 4) % 2 == 0  # Toggle every 4 frames
 
-            tree = draw_tree(blink_state, star_bright)
-            print(tree)
+            tree_drawing = draw_tree(tree, blink_state, star_bright)
+            print(tree_drawing)
 
             # Show frame counter (optional - remove for final video)
             print(f"\nFrame: {frame + 1}/{frames} | Press Ctrl+C to stop")
@@ -191,6 +209,7 @@ def main():
     if args.get("fps") is not None:
         kwargs["fps"] = int(args["fps"])
 
+    kwargs["tree"] = create_tree()
     clear_screen()
 
     animate_tree(**kwargs)
